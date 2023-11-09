@@ -1,0 +1,119 @@
+from typing import Dict, List
+from itertools import product 
+
+def evaluate_statement(statement: str, propositional_variables: Dict[str, bool]) -> bool:
+
+    def eval_token(token, variables):
+        if token == 'true':
+            return True
+        elif token =='false':
+            return False
+        else: #Propositional variable 
+            return variables.get(token, False)
+        
+    def apply_operator(operators, values):
+        operator = operators.pop()
+        if operator == 'NOT':
+            val = values.pop()
+            values.append(not val)
+        else: 
+            right = values.pop()
+            left = values.pop()
+            if operator == 'AND':
+                values.append(left and right)
+            elif operator == 'OR':
+                values.append(left or right)
+            elif operator == 'IF':
+                values.append(not left or right)
+            elif operator == 'IFF':
+                values.append(left == right)
+
+    precedence = {'NOT': 3, 'AND': 2, 'OR': 1, 'IF': 1, 'IFF': 1, '(': 0, ')': 0}
+    postfix = []
+    operators = []
+    tokens = statement.split()
+
+    for token in tokens:
+        if token in propositional_variables or token in ['true', 'false']:
+            postfix.append(token)
+        elif token == '(':
+            operators.append(token)
+        elif token == ')':
+            while operators and operators[-1] != '(':
+                postfix.append(operators.pop())
+        if operators:
+            operators.pop()  # pop the '('
+    else:  # Operator 
+        while (operators and 
+               operators[-1] != '(' and
+               precedence[operators[-1]] >= precedence[token]):
+            postfix.append(operators.pop())
+        operators.append(token)
+
+
+
+
+    while operators: 
+        postfix.append(operators.pop())
+
+    values = []
+    for token in postfix: 
+        if token in ['AND', 'OR', 'NOT', 'IF', 'IFF']:
+            apply_operator(operators, values)  # pass operators instead of token
+        else: 
+            values.append(eval_token(token, propositional_variables))
+    return values[0]
+
+assignment = {'P1': True, 'P2': True, 'P3': False}
+expression = '((P1 AND P2) OR (P3 AND true)) OR ((NOT P1 AND NOT P3) AND P2)'
+
+print(evaluate_statement(expression, assignment))
+
+def generate_truth_table(statement: str, propositional_variables: List[str]):
+    combinations = list(product([True, False], repeat=len(propositional_variables)))
+    truth_table = []
+
+    header = " | ".join(propositional_variables) + " | Result"
+    print(header)
+    print("-" * len(header))
+
+    for combination in combinations:
+        assignment = dict(zip(propositional_variables, combination))
+        result = evaluate_statement(statement, assignment)
+        truth_table.append(result)
+
+        values_str = " | ".join(["True " if val else "False" for val in combination])
+        print(f"{values_str} | {'True' if result else 'False'}")
+
+    return truth_table
+
+def statement_type(statement: str, propositional_variables: List[str]) -> str:
+
+    truth_table = generate_truth_table(statement, propositional_variables)
+
+    if all(truth_table):
+        return 'tautology'
+    elif any(truth_table):
+        return 'contingency'
+    else: 
+        return 'contradiction'
+
+
+def main():
+    examples = [
+        ('(NOT P1 AND (P1 OR P2)) IF P2', ['P1', 'P2']),
+        ('P2 AND (P1 IF NOT P2) AND (NOT P1 IF NOT P2)', ['P1', 'P2']),
+        ('(P1 IF (P2 IF P3)) IF ((P1 IF P2) IF P3)', ['P1', 'P2', 'P3'])
+    ]
+
+
+    for statement, vars in examples:
+        print(f"Statement: {statement}")
+        print(f"Variables: {vars}")
+        print("Truth Table:")
+        generate_truth_table(statement, vars)
+        print(f"Statement Type: {statement_type(statement, vars)}")
+        print("\n" + "="*40 + "\n")
+
+if __name__ == "__main__":
+    print(main())
