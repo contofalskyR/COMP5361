@@ -41,16 +41,13 @@ def evaluate_statement(statement: str, propositional_variables: Dict[str, bool])
         elif token == ')':
             while operators and operators[-1] != '(':
                 postfix.append(operators.pop())
-        if operators:
+        if operators:  # Check if there is an '(' to pop
             operators.pop()  # pop the '('
-    else:  # Operator 
-        while (operators and 
-               operators[-1] != '(' and
-               precedence[operators[-1]] >= precedence[token]):
-            postfix.append(operators.pop())
+        else:  
+            while (operators and 
+                precedence[operators[-1]] >= precedence[token]):
+                postfix.append(operators.pop())
         operators.append(token)
-
-
 
 
     while operators: 
